@@ -9,7 +9,7 @@ using Microsoft.Bot.Schema;
 
 namespace PascueroBot
 {
-    public class EmptyBot : ActivityHandler
+    public class PascueroBot : ActivityHandler
     {
         protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
@@ -17,9 +17,11 @@ namespace PascueroBot
             {
                 if (member.Id != turnContext.Activity.Recipient.Id)
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Text($"Hello world!"), cancellationToken);
+                    await turnContext.SendActivityAsync(MessageFactory.Text($"Hola mundo!"), cancellationToken);
                 }
             }
         }
+
+        
     }
 }
