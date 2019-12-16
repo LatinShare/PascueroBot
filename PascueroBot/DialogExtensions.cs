@@ -15,7 +15,7 @@ namespace PascueroBotSpace
 
             var dialogContext = await dialogSet.CreateContextAsync(turnContext, cancellationToken);
             var results = await dialogContext.ContinueDialogAsync(cancellationToken);
-            if (results.Status == DialogTurnStatus.Empty)
+            if (results.Status == DialogTurnStatus.Empty || results.Status == DialogTurnStatus.Complete)
             {
                 await dialogContext.BeginDialogAsync(dialog.Id, null, cancellationToken);
             }

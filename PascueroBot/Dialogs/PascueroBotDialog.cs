@@ -20,12 +20,14 @@ namespace PascueroBotSpace.Dialogs
             // This array defines how the Waterfall will execute.
             var waterfallSteps = new WaterfallStep[]
             {
+                MainStepAsync,
                 ConsultaEdadStepAsync,
                 ConsultaComportamientoStepAsync
             };
 
             // Add named dialogs to the DialogSet. These names are saved in the dialog state.
             AddDialog(new WaterfallDialog(nameof(WaterfallDialog), waterfallSteps));
+            AddDialog(new ChoicePrompt("MainStepAsync"));
             AddDialog(new TextPrompt("ConsultaEdadStep"));
             AddDialog(new ChoicePrompt("ConsultaComportamientoStep"));
 
@@ -33,10 +35,20 @@ namespace PascueroBotSpace.Dialogs
             InitialDialogId = nameof(WaterfallDialog);
         }
 
-
+        private static async Task<DialogTurnResult> MainStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
+            // Running a prompt here means the next WaterfallStep will be run when the user's response is received.
+            return await stepContext.PromptAsync("MainStepAsync",
+                new PromptOptions
+                {
+                    Prompt = MessageFactory.Text("¿Qué deseas hacer jo jo jo? ✨"),
+                    Choices = ChoiceFactory.ToChoices(new List<string> { "Pedir un regalo", "Ver cards de Bot" }),
+                }, cancellationToken);
+        }
         private static async Task<DialogTurnResult> ConsultaEdadStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-           var promptOptions = new PromptOptions { Prompt = MessageFactory.Text("¿Qué edad tienes?") };
+            var promptOptions = new PromptOptions { Prompt = MessageFactory.Text("¿Qué edad tienes? 🎁") };
 
             // Ask the user to enter their age.
             return await stepContext.PromptAsync("ConsultaEdadStep", promptOptions, cancellationToken);
@@ -49,8 +61,8 @@ namespace PascueroBotSpace.Dialogs
             return await stepContext.PromptAsync("ConsultaComportamientoStep",
                 new PromptOptions
                 {
-                    Prompt = MessageFactory.Text("¿Cómo te portaste este año?"),
-                    Choices = ChoiceFactory.ToChoices(new List<string> { "Bien", "Regular", "Mal" }),
+                    Prompt = MessageFactory.Text("¿Cómo te portaste este año? 🎄"),
+                    Choices = ChoiceFactory.ToChoices(new List<string> { "Bien 😁", "Regular 🤐", "Mal 😣" }),
                 }, cancellationToken);
         }
     }
