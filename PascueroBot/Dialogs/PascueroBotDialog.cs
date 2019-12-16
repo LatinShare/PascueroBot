@@ -20,12 +20,14 @@ namespace PascueroBotSpace.Dialogs
             // This array defines how the Waterfall will execute.
             var waterfallSteps = new WaterfallStep[]
             {
-                ConsultaEdadStepAsync
+                ConsultaEdadStepAsync,
+                ConsultaComportamientoStepAsync
             };
 
             // Add named dialogs to the DialogSet. These names are saved in the dialog state.
             AddDialog(new WaterfallDialog(nameof(WaterfallDialog), waterfallSteps));
             AddDialog(new TextPrompt("ConsultaEdadStep"));
+            AddDialog(new ChoicePrompt("ConsultaComportamientoStep"));
 
             // The initial child Dialog to run.
             InitialDialogId = nameof(WaterfallDialog);
@@ -38,6 +40,18 @@ namespace PascueroBotSpace.Dialogs
 
             // Ask the user to enter their age.
             return await stepContext.PromptAsync("ConsultaEdadStep", promptOptions, cancellationToken);
+        }
+
+        private static async Task<DialogTurnResult> ConsultaComportamientoStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
+            // Running a prompt here means the next WaterfallStep will be run when the user's response is received.
+            return await stepContext.PromptAsync("ConsultaComportamientoStep",
+                new PromptOptions
+                {
+                    Prompt = MessageFactory.Text("¿Cómo te portaste este año?"),
+                    Choices = ChoiceFactory.ToChoices(new List<string> { "Bien", "Regular", "Mal" }),
+                }, cancellationToken);
         }
     }
 }
