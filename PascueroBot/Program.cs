@@ -6,7 +6,7 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace PascueroBot
+namespace PascueroBotSpace
 {
     public class Program
     {
