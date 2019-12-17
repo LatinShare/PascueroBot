@@ -6,6 +6,6 @@ namespace PascueroBotSpace
         public string Nombre { get; set; }
         public string IdUsuario { get; set; }
         public string TenantId { get; set; }
-
+        public bool RegaloSolicitado { get; set; }
     }
 }
