@@ -1,0 +1,26 @@
+{
+    "name": "BotPresentacion",
+    "description": "",
+    "services": [
+        {
+            "type": "endpoint",
+            "appId": "2483c111-e24e-4d31-8584-f81a8ef8f261",
+            "appPassword": "JW21NvnODkc-sv=0v_0.xkjt]GxMBE/X",
+            "endpoint": "http://localhost:3978/api/messages",
+            "id": "24ce9bc0-1c21-11ea-aeb0-91a6647eb168",
+            "name": "Dev"
+        },
+        {
+            "type": "endpoint",
+            "appId": "2483c111-e24e-4d31-8584-f81a8ef8f261",
+            "appPassword": "JW21NvnODkc-sv=0v_0.xkjt]GxMBE/X",
+            "endpoint": "https://botpresentacion.azurewebsites.net/api/messages",
+            "id": "159",
+            "name": "Produccion"
+        }
+    ],
+    "padlock": "",
+    "version": "2.0",
+    "path": "C:\\Users\\bpalma\\Desktop\\Bot\\BotPresentacion.bot",
+    "overrides": null
+}
