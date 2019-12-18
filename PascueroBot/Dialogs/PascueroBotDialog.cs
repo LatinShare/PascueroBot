@@ -3,6 +3,7 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Dialogs.Choices;
 using Microsoft.Bot.Schema;
 using PascueroBot.Controllers;
+using PascueroBotSpace.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,9 @@ namespace PascueroBotSpace.Dialogs
     {
         //private readonly IStatePropertyAccessor<Usuario> _userProfileAccessor;
         private static UserState _userState;
+        private static Regalo[] regaloNinos;
+        private static Regalo[] regaloJovenes;
+        private static Regalo[] regaloAbuelos;
         public PascueroBotDialog(UserState userState)
             : base(nameof(PascueroBotDialog))
         {
@@ -27,6 +31,8 @@ namespace PascueroBotSpace.Dialogs
                 MainStepAsync,
                 ConsultaEdadStepAsync,
                 ConsultaComportamientoStepAsync,
+                RegaloStepAsync,
+                ConfirmStepAsync,
                 FinalStepAsync
             };
 
@@ -35,6 +41,8 @@ namespace PascueroBotSpace.Dialogs
             AddDialog(new ChoicePrompt("MainStepAsync"));
             AddDialog(new NumberPrompt<int>("ConsultaEdadStep"));
             AddDialog(new ChoicePrompt("ConsultaComportamientoStep"));
+            AddDialog(new ChoicePrompt("ConsultaComportamientoStep"));
+            AddDialog(new ConfirmPrompt("ConfirmStep"));
 
             // The initial child Dialog to run.
             InitialDialogId = nameof(WaterfallDialog);
@@ -54,7 +62,7 @@ namespace PascueroBotSpace.Dialogs
         private static async Task<DialogTurnResult> ConsultaEdadStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             stepContext.Values["accion_realizar"] = ((FoundChoice)stepContext.Result).Value;
-            
+
             if (stepContext.Values["accion_realizar"].ToString() == "Ver cards de Bot")
             {
                 await Cards.SendAdaptiveCard(stepContext.Context, cancellationToken);
@@ -63,7 +71,7 @@ namespace PascueroBotSpace.Dialogs
             }
             else
             {
-                
+
                 Usuario usuario = await PascueroBotDialog.GetUserInfo(stepContext.Context, cancellationToken);
                 if (usuario.RegaloSolicitado)
                 {
@@ -93,44 +101,73 @@ namespace PascueroBotSpace.Dialogs
                 }, cancellationToken);
         }
 
-        private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        private async Task<DialogTurnResult> RegaloStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             stepContext.Values["comportamiento"] = ((FoundChoice)stepContext.Result).Value;
 
-            await MentionActivityAsync((ITurnContext<IMessageActivity>)stepContext.Context, cancellationToken);
+            await MentionActivityAsync(stepContext, cancellationToken);
 
+            // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is the end.
+            return await stepContext.ContinueDialogAsync(cancellationToken: cancellationToken);
+        }
+        private async Task<DialogTurnResult> ConfirmStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+
+            // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is the end.
+            return await stepContext.PromptAsync("ConfirmStep", new PromptOptions { Prompt = MessageFactory.Text("¿Te gustó el regalo jo jo jo?") }, cancellationToken);
+        }
+        private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            stepContext.Values["confirmacion"] = (bool)stepContext.Result;
+
+            if ((bool)stepContext.Values["confirmacion"])
+            {
+                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Disfrutalo jo jo jo 🎅"), cancellationToken);
+            }
+            else
+            {
+                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Portate mejor el próximo año 🎅"), cancellationToken);
+            }
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is the end.
             return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
         }
-
-        private async Task MentionActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        private async Task MentionActivityAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            var heroCard = new HeroCard
-            {
-                Title = "BotFramework Hero Card",
-                Subtitle = "Microsoft Bot Framework",
-                Text = "Build and connect intelligent bots to interact with your users naturally wherever they are," +
-                       " from text/sms to Skype, Slack, Office 365 mail and other popular services.",
-                Images = new List<CardImage> { new CardImage("https://sec.ch9.ms/ch9/7ff5/e07cfef0-aa3b-40bb-9baa-7c9ef8ff7ff5/buildreactionbotframework_960.jpg") },
-                Buttons = new List<CardAction> { new CardAction(ActionTypes.OpenUrl, "Get Started", value: "https://docs.microsoft.com/bot-framework") },
-            };
+            Usuario usuario = await GetUserInfo(stepContext.Context, cancellationToken);
+            usuario.Comportamiento = stepContext.Values["comportamiento"].ToString().Contains("Bien") ? ComportamientoEnum.Comportamiento.Bien : (stepContext.Values["comportamiento"].ToString().Contains("Mal") ? ComportamientoEnum.Comportamiento.Mal : ComportamientoEnum.Comportamiento.Regular);
+            usuario.Edad = (int)stepContext.Values["edad"];
 
 
-            Usuario usuario = await GetUserInfo(turnContext, cancellationToken);
             usuario.RegaloSolicitado = true;
+            Regalo regalo = ObtenerRegalo(usuario);
+
+
+
+
             var mention = new Mention
             {
-                Mentioned = turnContext.Activity.From,
-                Text = $"<at>{XmlConvert.EncodeName(turnContext.Activity.From.Name)}</at>",
+                Mentioned = stepContext.Context.Activity.From,
+                Text = $"<at>{XmlConvert.EncodeName(stepContext.Context.Activity.From.Name)}</at>",
             };
 
-            var replyActivity = MessageFactory.Text($"Hello {mention.Text}.");
+            var replyActivity = MessageFactory.Text(string.Format(regalo.MensajeRegalo, mention.Text));
             replyActivity.Entities = new List<Entity> { mention };
 
 
+
+            var heroCard = new HeroCard
+            {
+                Title = $"{regalo.Nombre}",
+                //Subtitle = "Microsoft Bot Framework",
+                Text = regalo.Descripcion,
+                Images = new List<CardImage> { new CardImage(regalo.UrlImagen) },
+                Buttons = new List<CardAction> { new CardAction(ActionTypes.OpenUrl, "Ver Regalo", value: regalo.UrlImagen) },
+
+            };
+
             replyActivity.Attachments.Add(heroCard.ToAttachment());
 
-            await turnContext.SendActivityAsync(replyActivity, cancellationToken);
+            await stepContext.Context.SendActivityAsync(replyActivity, cancellationToken);
         }
 
         public async static Task<Usuario> GetUserInfo(ITurnContext turnContext, CancellationToken cancellationToken)
@@ -138,6 +175,36 @@ namespace PascueroBotSpace.Dialogs
             IStatePropertyAccessor<Usuario> _userProfileAccessor = _userState.CreateProperty<Usuario>("UserProfile");
             return await _userProfileAccessor.GetAsync(turnContext, () => new Usuario(), cancellationToken);
 
+        }
+
+        public Regalo ObtenerRegalo(Usuario usuario)
+        {
+            Regalo regaloSeleccionado = null;
+            Regalo[] regalos = new Regalos().regalos;
+
+            foreach (Regalo regalo in regalos)
+            {
+                if (regalo.Comportamiento == usuario.Comportamiento && (regalo.EdadMinima <= usuario.Edad && regalo.EdadMaxima >= usuario.Edad))
+                {
+                    regaloSeleccionado = regalo;
+                    break;
+                }
+            }
+
+            string mensajeRegalo = "";
+
+            if (usuario.Comportamiento == ComportamientoEnum.Comportamiento.Bien)
+            {
+                regaloSeleccionado.MensajeRegalo = "Ya que te portaste bien {0} este año tu regalo es :";
+            }else if (usuario.Comportamiento == ComportamientoEnum.Comportamiento.Regular)
+            {
+                regaloSeleccionado.MensajeRegalo = "Ya que no te portaste muy bien {0} este año tu regalo es :";
+            }
+            else{
+                regaloSeleccionado.MensajeRegalo = "Este año te portaste muy mal, pero igual tienes regalo:";
+            }
+
+            return regaloSeleccionado;
         }
     }
 }

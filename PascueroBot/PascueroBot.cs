@@ -9,6 +9,8 @@ using Microsoft.Bot.Schema;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Teams;
 using Microsoft.Bot.Schema.Teams;
+using PascueroBotSpace.Model;
+
 namespace PascueroBotSpace
 {
     public class PascueroBot<T> : ActivityHandler where T : Dialog
